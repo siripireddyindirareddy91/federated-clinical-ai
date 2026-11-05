@@ -27,6 +27,7 @@ class PlatformTests(unittest.TestCase):
             method=self.researcher.get if not suffix else self.researcher.post
             self.assertEqual(method('/api/datasets/'+foreign['id']+suffix).status_code,403)
         self.assertEqual(self.auditor.get('/api/datasets').json(),[])
+        snapshot=self.researcher.get('/api/workspace').json();self.assertEqual(len({d['hospital_id'] for d in snapshot['datasets']}),1);self.assertEqual(snapshot['users'],[]);self.assertEqual(len(snapshot['rounds']),snapshot['overview']['completed_rounds'])
     def test_roles(self):
         self.assertEqual(self.researcher.post('/api/federated/rounds/start',json={}).status_code,403)
         self.assertEqual(self.researcher.get('/api/admin/users').status_code,403)

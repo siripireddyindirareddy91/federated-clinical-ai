@@ -1,5 +1,5 @@
 """MediFed synthetic research API. Logical tenants; educational privacy simulation."""
-import os,json,secrets,hashlib,hmac,csv,io,time,threading
+import os,json,secrets,hashlib,hmac,csv,io,time,threading,uuid
 from datetime import timedelta
 from typing import Literal,TypedDict
 import jwt
@@ -41,9 +41,10 @@ def seed():
         if DEMO and not db.scalar(select(Hospital.id).limit(1)):
             hs=[]
             for i,(name,city) in enumerate([('Meridian Research Hospital','Hyderabad'),('Northstar Medical Institute','Bengaluru'),('Evergreen University Hospital','Pune'),('Harbor Clinical Research','Chennai'),('Summit Health Sciences','New Delhi')]):
-                h=Hospital(name=name,location=city+', India');db.add(h);db.flush();hs.append(h);rows=generate(42+i,240+i*30)
-                add(db,'dataset',{'name':f'Synthetic cohort {i+1}','rows':rows,'validation':validate(rows),'preprocessed':False,'synthetic':True},h.id)
-            for role in ROLES:db.add(User(email=role+'@medifed.demo',name={'super_admin':'Alex Morgan','hospital_admin':'Jordan Lee','researcher':'Sam Taylor','clinician':'Dr. Avery Chen','auditor':'Casey Patel'}[role],password=password_hash('MediFed-Demo-2026!'),role=role,hospital_id=None if role in ['super_admin','auditor'] else hs[0].id))
+                h=Hospital(id=str(uuid.uuid5(uuid.NAMESPACE_URL,'medifed-demo-hospital-'+str(i))),name=name,location=city+', India');db.add(h);db.flush();hs.append(h);rows=generate(42+i,240+i*30)
+                seeded_dataset=add(db,'dataset',{'name':f'Synthetic cohort {i+1}','rows':rows,'validation':validate(rows),'preprocessed':False,'synthetic':True},h.id)
+                seeded_dataset.id=str(uuid.uuid5(uuid.NAMESPACE_URL,'medifed-demo-dataset-'+str(i)))
+            for role in ROLES:db.add(User(id=str(uuid.uuid5(uuid.NAMESPACE_URL,'medifed-demo-user-'+role)),email=role+'@medifed.demo',name={'super_admin':'Alex Morgan','hospital_admin':'Jordan Lee','researcher':'Sam Taylor','clinician':'Dr. Avery Chen','auditor':'Casey Patel'}[role],password=password_hash('MediFed-Demo-2026!'),role=role,hospital_id=None if role in ['super_admin','auditor'] else hs[0].id))
             audit(db,'system','Demo initialized','Five synthetic hospitals; no real patient information')
         if not DEMO and not db.scalar(select(User.id).limit(1)):
             email=os.getenv('ADMIN_EMAIL');pw=os.getenv('ADMIN_PASSWORD','')
@@ -391,3 +392,8 @@ def report(kind:Literal['federated','privacy','models'],format:Literal['csv','pd
 @app.get('/api/synthetic/sample')
 def sample(u=Depends(current)):
     out=io.StringIO();w=csv.DictWriter(out,fieldnames=FEATURES+['risk_category']);w.writeheader();w.writerows(generate(73,100));return Response(out.getvalue(),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="synthetic-cohort.csv"'})
+
+@app.get('/api/workspace')
+def workspace(u=Depends(current),db=Depends(database)):
+    """One consistent authorized snapshot, without parallel serverless fan-out."""
+    return {'user':pack(u),'health':health(),'overview':overview(u,db),'hospitals':hospitals(u,db),'datasets':datasets(u,db),'rounds':rounds(u,db),'models':models(u,db),'privacy':privacy(u,db),'activities':activities(u,db),'executions':executions(u,db),'agents':agents(u),'cases':cases(u,db),'fairness':fairness(u,db),'audit':audit_logs(0,100,u,db) if u.role in ['super_admin','auditor'] else [],'users':users(u,db) if u.role=='super_admin' else []}

@@ -1,0 +1,5 @@
+# Federated learning
+
+Each round selects at least two active hospitals, loads each latest local cohort, validates quality, imputes missing features using public synthetic reference means, scales against public reference constants, and creates a fixed stratified holdout. Local logistic gradient descent starts at the active global parameters. Each local parameter delta is clipped and may receive educational Gaussian noise. Parameter vectors are sample weighted and pairwise numeric masks are cancelled in sum space. The aggregate becomes the next registered global model and initializes the following round.
+
+Random forest and gradient boosting are local comparison baselines only. Their tree parameters are not compatible with parameter averaging. There is no Flower network service: the fallback is an explicitly documented, working in-process simulation. Source feature records are never returned from the coordinator APIs. Exact metrics combine held-out labels/probabilities in-process, which is a further research-only limitation.

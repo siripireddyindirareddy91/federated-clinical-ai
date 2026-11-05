@@ -282,32 +282,9 @@ export default function Dashboard({ route }: { route: string }) {
       user?.role || "",
     );
   const load = useCallback(async () => {
-    const paths: Record<string, string> = {
-      overview: "/dashboard/overview",
-      hospitals: "/hospitals",
-      datasets: "/datasets",
-      rounds: "/federated/rounds",
-      models: "/models",
-      privacy: "/privacy/config",
-      activities: "/dashboard/activities",
-      executions: "/agents/executions",
-      agents: "/agents",
-      cases: "/research/cases",
-      fairness: "/analytics/fairness",
-    };
-    if (section === "audit-logs") paths.audit = "/admin/audit-logs";
-    if (section === "settings") paths.users = "/admin/users";
-    const entries = await Promise.all(
-      Object.entries(paths).map(async ([k, p]) => {
-        try {
-          return [k, await api(p)];
-        } catch (e: any) {
-          if (k === "overview") throw e;
-          return [k, []];
-        }
-      }),
-    );
-    const next = Object.fromEntries(entries);
+    const next = await api("/workspace");
+    setUser(next.user);
+    setHealth(next.health);
     setData(next);
     setPrivacyForm(next.privacy);
   }, [section]);
