@@ -1,0 +1,33 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: medifed
+      POSTGRES_USER: medifed
+      POSTGRES_PASSWORD: local-demo-change-me
+    volumes:
+      - medifed-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medifed"]
+      interval: 5s
+      retries: 10
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://medifed:local-demo-change-me@database:5432/medifed
+      DEMO_MODE: "true"
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      database:
+        condition: service_healthy
+  frontend:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      API_URL: http://backend:8000
+    depends_on: [backend]
+volumes:
+  medifed-db:

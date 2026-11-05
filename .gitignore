@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.vercel/
+.env
+.env.local
+.env.*.local
+__pycache__/
+*.pyc
+*.db
+.pytest_cache/
+.venv/
+coverage/
+*.log
+.vercel

@@ -1,0 +1,10 @@
+fastapi==0.135.1
+uvicorn==0.42.0
+SQLAlchemy==2.0.51
+numpy==2.2.6
+scikit-learn==1.8.0
+PyJWT==2.12.1
+python-multipart==0.0.22
+psycopg[binary]==3.2.13
+langgraph==1.1.10
+reportlab==4.4.10
